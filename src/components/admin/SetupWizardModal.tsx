@@ -528,7 +528,7 @@ export function SetupWizardModal() {
               ) : (
                 <div className="space-y-3">
                   <p className="text-xs text-slate-600">
-                    Sign in with the designated project owner Google account to confirm Super Admin privileges.
+                    Sign in with the designated Super Admin account (<strong>support.rjworld@gmail.com</strong>) to confirm administrator privileges.
                   </p>
                   <button
                     type="button"
@@ -536,7 +536,7 @@ export function SetupWizardModal() {
                     className="inline-flex h-10 items-center gap-2 rounded-xl bg-violet-700 px-4 text-xs font-bold text-white hover:bg-violet-800"
                   >
                     <UserCheck className="h-4 w-4" />
-                    <span>Verify with Google Sign-In</span>
+                    <span>Sign In with Google</span>
                   </button>
                 </div>
               )}

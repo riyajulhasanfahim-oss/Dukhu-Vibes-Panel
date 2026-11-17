@@ -1,10 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { sendEmailVerification } from 'firebase/auth';
 import {
+  AlertTriangle,
   ArrowLeft,
   Bell,
   Lock,
   LogOut,
+  MailCheck,
   Menu,
+  RefreshCw,
   Sparkles,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -45,11 +49,15 @@ export function AdminPanelPage() {
     openSetupWizard,
     signOutAdmin,
     refreshCustomerData,
+    showToast,
   } = useApp();
 
   const [activeSection, setActiveSection] = useState<AdminSectionId>('dashboard');
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [unreadAlertsCount, setUnreadAlertsCount] = useState(0);
+  const [firestoreAuthVerified, setFirestoreAuthVerified] = useState<boolean>(true);
+  const [sendingVerification, setSendingVerification] = useState<boolean>(false);
+  const [refreshingSession, setRefreshingSession] = useState<boolean>(false);
 
   const effectiveStaffRole = staffRole ?? (userRole === 'admin' ? 'admin' : null);
   const isAuthorizedStaff = Boolean(
@@ -91,6 +99,76 @@ export function AdminPanelPage() {
       goToHome();
     }
   }, [goToHome, isAuthorizedStaff]);
+
+  useEffect(() => {
+    if (!firebaseUser) {
+      setFirestoreAuthVerified(true);
+      return;
+    }
+    let active = true;
+    firebaseUser
+      .getIdTokenResult()
+      .then((res) => {
+        if (!active) return;
+        const hasAdminClaim = res.claims.admin === true && res.claims.role === 'admin';
+        setFirestoreAuthVerified(Boolean(firebaseUser.emailVerified || hasAdminClaim));
+      })
+      .catch(() => {
+        if (active) setFirestoreAuthVerified(Boolean(firebaseUser.emailVerified));
+      });
+    return () => {
+      active = false;
+    };
+  }, [firebaseUser]);
+
+  const handleSendVerificationEmail = async () => {
+    if (!firebaseUser) return;
+    setSendingVerification(true);
+    try {
+      await sendEmailVerification(firebaseUser);
+      showToast({
+        title: 'Verification Email Sent',
+        description: `Check ${firebaseUser.email ?? 'your inbox'} and click the verification link, then click Refresh Session.`,
+        tone: 'success',
+      });
+    } catch (error) {
+      showToast({
+        title: 'Could Not Send Email',
+        description: error instanceof Error ? error.message : 'Please try again shortly.',
+        tone: 'error',
+      });
+    } finally {
+      setSendingVerification(false);
+    }
+  };
+
+  const handleRefreshAdminSession = async () => {
+    if (!firebaseUser) return;
+    setRefreshingSession(true);
+    try {
+      await firebaseUser.reload();
+      const tokenRes = await firebaseUser.getIdTokenResult(true);
+      const hasAdminClaim = tokenRes.claims.admin === true && tokenRes.claims.role === 'admin';
+      const verified = Boolean(firebaseUser.emailVerified || hasAdminClaim);
+      setFirestoreAuthVerified(verified);
+      if (verified) {
+        await refreshCustomerData();
+        showToast({
+          title: 'Admin Session Verified',
+          description: 'Firestore admin permissions are now active.',
+          tone: 'success',
+        });
+      } else {
+        showToast({
+          title: 'Still Unverified',
+          description: 'Please click the link in your verification email first, then refresh.',
+          tone: 'warning',
+        });
+      }
+    } finally {
+      setRefreshingSession(false);
+    }
+  };
 
   if (!isAuthorizedStaff) {
     return null;
@@ -178,6 +256,40 @@ export function AdminPanelPage() {
         </header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-5">
+          {!firestoreAuthVerified && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3.5 text-xs text-amber-950">
+              <div className="flex items-start gap-2.5 max-w-2xl">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" aria-hidden="true" />
+                <div>
+                  <p className="font-bold">Email Verification Required for Firestore Writes</p>
+                  <p className="text-amber-900/90 mt-0.5">
+                    Security rules require <strong>{firebaseUser?.email}</strong> to verify its email once before modifying database records. Send a verification link and click Refresh Session after confirming.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  disabled={sendingVerification}
+                  onClick={handleSendVerificationEmail}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 text-xs font-bold text-white hover:bg-amber-700 disabled:opacity-60"
+                >
+                  <MailCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{sendingVerification ? 'Sending...' : 'Send Verification Email'}</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={refreshingSession}
+                  onClick={handleRefreshAdminSession}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-amber-300 bg-white px-3.5 text-xs font-bold text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${refreshingSession ? 'animate-spin' : ''}`} aria-hidden="true" />
+                  <span>Refresh Session</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {adminPermissions.canManageSystemLifecycle && !setupState.setupCompleted && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-50 via-white to-indigo-50 px-4 py-3">
               <div className="text-xs">

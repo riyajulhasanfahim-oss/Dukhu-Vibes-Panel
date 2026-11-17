@@ -31,6 +31,8 @@ import {
 } from '../lib/firestore/collections';
 import { OperationType, handleFirestoreError } from '../lib/firestore/errors';
 
+const DESIGNATED_ADMIN_EMAIL = 'support.rjworld@gmail.com';
+
 function ensureResellerProfileBestEffort(uid: string, name: string, email: string): void {
   const services = getFirebaseServices();
   if (!services || !uid) return;
@@ -143,6 +145,12 @@ export const authService = {
       throw new Error('Firebase is not configured yet. Please contact the administrator.');
     }
 
+    if (input.email.trim().toLowerCase() === DESIGNATED_ADMIN_EMAIL) {
+      throw new Error(
+        'This email address is reserved for panel administration. Please use Sign In instead.'
+      );
+    }
+
     let authUser: FirebaseAuthUser;
     try {
       const cred = await createUserWithEmailAndPassword(
@@ -208,18 +216,79 @@ export const authService = {
       throw new Error('Firebase is not configured yet. Please contact the administrator.');
     }
 
+    const normalizedEmail = input.email.trim().toLowerCase();
+
     try {
       await setPersistence(
         services.auth,
         input.rememberMe ? browserLocalPersistence : browserSessionPersistence
       );
-      const cred = await signInWithEmailAndPassword(
-        services.auth,
-        input.email.trim(),
-        input.password
-      );
-      return await this.ensureAndFetchUserProfile(cred.user);
+      try {
+        const cred = await signInWithEmailAndPassword(
+          services.auth,
+          normalizedEmail,
+          input.password
+        );
+        return await this.ensureAndFetchUserProfile(cred.user);
+      } catch (signInError) {
+        const errCode =
+          typeof signInError === 'object' && signInError !== null && 'code' in signInError
+            ? String((signInError as { code?: unknown }).code ?? '').toLowerCase()
+            : '';
+        const mayNeedAdminBootstrap =
+          normalizedEmail === DESIGNATED_ADMIN_EMAIL &&
+          (errCode.includes('user-not-found') || errCode.includes('invalid-credential'));
+
+        if (!mayNeedAdminBootstrap) {
+          throw signInError;
+        }
+
+        const bootstrapRes = await fetch('/api/auth/bootstrap-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: normalizedEmail,
+            password: input.password,
+            firebaseProjectId: services.config.projectId,
+            firebaseDatabaseId: services.config.firestoreDatabaseId || '(default)',
+            firebaseApiKey: services.config.apiKey,
+          }),
+        }).catch(() => null);
+
+        if (!bootstrapRes) {
+          throw signInError;
+        }
+
+        const bootstrapJson = (await bootstrapRes.json().catch(() => ({}))) as {
+          ok?: boolean;
+          code?: string;
+          error?: string;
+        };
+
+        if (!bootstrapRes.ok || !bootstrapJson.ok) {
+          if (bootstrapJson.code === 'EMAIL_PASSWORD_DISABLED') {
+            throw new Error(
+              bootstrapJson.error ||
+                'Email/Password sign-in is not yet enabled in this Firebase project.'
+            );
+          }
+          throw signInError;
+        }
+
+        const retryCred = await signInWithEmailAndPassword(
+          services.auth,
+          normalizedEmail,
+          input.password
+        );
+        return await this.ensureAndFetchUserProfile(retryCred.user);
+      }
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.toLowerCase().includes('email/password sign-in is not yet enabled')
+      ) {
+        throw error;
+      }
       throw new Error(toUserFriendlyAuthError(error));
     }
   },
@@ -291,7 +360,7 @@ export const authService = {
     }
 
     const isDesignatedAdmin =
-      authUser.email?.trim().toLowerCase() === 'frofficialbd1@gmail.com';
+      authUser.email?.trim().toLowerCase() === DESIGNATED_ADMIN_EMAIL;
 
     if (snap.exists()) {
       const profile = mapFirestoreUser(snap.data() as FirestoreUserDoc);

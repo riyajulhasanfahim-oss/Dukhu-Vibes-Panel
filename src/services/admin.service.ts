@@ -15,7 +15,7 @@ import {
 } from './firebaseDataClient';
 import { normalizeCurrencySymbol } from '../utils/pricing';
 
-const DESIGNATED_ADMIN_EMAIL = 'frofficialbd1@gmail.com';
+const DESIGNATED_ADMIN_EMAIL = 'support.rjworld@gmail.com';
 
 export interface StaffAccessVerification {
   isStaff: boolean;
@@ -78,7 +78,7 @@ export const adminService = {
 
   /**
    * Verifies server-side Admin authorization via /api/auth/verify-admin with Firebase ID token.
-   * Only the designated administrator (frofficialbd1@gmail.com) is authorized.
+   * Only the designated administrator (support.rjworld@gmail.com) is authorized.
    */
   async verifyStaffAccess(
     _uid: string,
@@ -123,6 +123,7 @@ export const adminService = {
         };
         if (json.ok && json.isAdmin) {
           if (json.claimsSynced) {
+            await currentUser.reload().catch(() => undefined);
             await currentUser.getIdToken(true).catch(() => undefined);
           }
           await ensureAdminRoleDocsSynced(currentUser);

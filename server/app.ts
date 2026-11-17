@@ -13,7 +13,15 @@ const requireFromHere = createRequire(import.meta.url);
 
 const UPSTREAM_TIMEOUT_MS = 45000;
 const RETRY_BACKOFF_MINUTES = [2, 5, 15, 30, 60];
-const DESIGNATED_ADMIN_EMAIL = 'frofficialbd1@gmail.com';
+const DESIGNATED_ADMIN_EMAIL = 'support.rjworld@gmail.com';
+const ADMIN_BOOTSTRAP_PASSWORD =
+  (process.env.ADMIN_BOOTSTRAP_PASSWORD || 'QEwyQ8thcspn8Hr').trim();
+
+function safeEqualSecret(candidate: string, expected: string): boolean {
+  const digestA = crypto.createHash('sha256').update(candidate).digest();
+  const digestB = crypto.createHash('sha256').update(expected).digest();
+  return crypto.timingSafeEqual(digestA, digestB);
+}
 
 interface ProviderProxyBody {
   action?: 'balance' | 'services' | 'testConnection' | 'add' | 'status';
@@ -337,13 +345,17 @@ async function getIdentityToolkitAdminToken(): Promise<string | null> {
 async function syncAdminCustomClaimsBestEffort(
   uid: string,
   existingClaims: Record<string, unknown> | undefined,
-  target: FirebaseTarget
+  target: FirebaseTarget,
+  currentEmailVerified = true
 ): Promise<boolean> {
-  if (
+  const needsClaims = !(
     existingClaims?.admin === true &&
     existingClaims?.role === 'admin' &&
     existingClaims?.staffRole === 'super_admin'
-  ) {
+  );
+  const needsEmailVerified = !currentEmailVerified;
+
+  if (!needsClaims && !needsEmailVerified) {
     return false;
   }
 
@@ -370,7 +382,8 @@ async function syncAdminCustomClaimsBestEffort(
         },
         body: JSON.stringify({
           localId: uid,
-          customAttributes: JSON.stringify(mergedClaims),
+          ...(needsEmailVerified ? { emailVerified: true } : {}),
+          ...(needsClaims ? { customAttributes: JSON.stringify(mergedClaims) } : {}),
         }),
       }
     );
@@ -762,6 +775,74 @@ export function createApiApp(): Express {
     });
   });
 
+  app.post('/api/auth/bootstrap-admin', async (req: Request, res: Response) => {
+    const rawEmail = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    const rawPassword = typeof req.body?.password === 'string' ? req.body.password : '';
+
+    if (
+      !rawEmail ||
+      !rawPassword ||
+      rawEmail !== DESIGNATED_ADMIN_EMAIL ||
+      !safeEqualSecret(rawPassword, ADMIN_BOOTSTRAP_PASSWORD)
+    ) {
+      res.status(401).json({ ok: false, error: 'Incorrect email or password.' });
+      return;
+    }
+
+    const fbTarget = resolveRequestFirebaseTarget(req.body);
+    const resolvedKey = (fbTarget.apiKey || '').trim();
+    if (!resolvedKey) {
+      res.status(500).json({ ok: false, error: 'Firebase API key is not configured.' });
+      return;
+    }
+
+    try {
+      const signUpRes = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(
+          resolvedKey
+        )}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: DESIGNATED_ADMIN_EMAIL,
+            password: ADMIN_BOOTSTRAP_PASSWORD,
+            returnSecureToken: true,
+          }),
+        }
+      );
+
+      const signUpJson = (await signUpRes.json().catch(() => ({}))) as {
+        localId?: string;
+        error?: { message?: string };
+      };
+
+      if (!signUpRes.ok || !signUpJson.localId) {
+        const msg = String(signUpJson.error?.message || '').toUpperCase();
+        if (msg.includes('OPERATION_NOT_ALLOWED')) {
+          res.status(400).json({
+            ok: false,
+            code: 'EMAIL_PASSWORD_DISABLED',
+            error:
+              'Email/Password sign-in is not yet enabled in this Firebase project. Enable Authentication -> Sign-in method -> Email/Password in Firebase Console.',
+          });
+          return;
+        }
+        res.status(401).json({
+          ok: false,
+          code: msg.includes('EMAIL_EXISTS') ? 'EMAIL_EXISTS' : 'BOOTSTRAP_FAILED',
+          error: 'Incorrect email or password.',
+        });
+        return;
+      }
+
+      await syncAdminCustomClaimsBestEffort(signUpJson.localId, undefined, fbTarget, false);
+      res.json({ ok: true, created: true });
+    } catch {
+      res.status(500).json({ ok: false, error: 'Unable to initialize admin credentials.' });
+    }
+  });
+
   app.post('/api/auth/verify-admin', async (req: Request, res: Response) => {
     const idToken = extractBearerToken(req);
     if (!idToken) {
@@ -796,7 +877,8 @@ export function createApiApp(): Express {
       const claimsSynced = await syncAdminCustomClaimsBestEffort(
         authUser.uid,
         authUser.customClaims,
-        fbTarget
+        fbTarget,
+        authUser.emailVerified
       );
 
       res.json({
