@@ -44,18 +44,19 @@ export function BrandLogo({ showTagline = false, size = 'md', onClick }: BrandLo
         ) : (
           <svg viewBox="0 0 36 36" fill="none" className="h-6 w-6" aria-hidden="true">
             <path
-              d="M7 25L12 10H18.5C21.2 10 22.8 11.5 22.2 14C21.7 16.1 19.9 17.4 17.5 17.6L21.5 25H17.6L14.2 18.2H12.3L10.3 25H7ZM13.2 15.3H16.9C18.2 15.3 19.1 14.7 19.3 13.7C19.5 12.8 18.8 12.3 17.5 12.3H14.1L13.2 15.3Z"
+              d="M7.5 8.5H15.2C20.9 8.5 24.4 11.9 24.4 18C24.4 24.1 20.9 27.5 15.2 27.5H7.5V8.5ZM12.3 12.9V23.1H15C18.1 23.1 19.6 21.3 19.6 18C19.6 14.7 18.1 12.9 15 12.9H12.3Z"
               fill="currentColor"
             />
             <path
-              d="M23.5 10H27.2L24.7 20.4C24.1 23.2 22.1 25.1 19 25.4L18.6 22.7C20.4 22.4 21.2 21.4 21.6 19.6L23.5 10Z"
-              fill="#FACC15"
+              d="M17.5 18.2H20.4L22.2 14.2L24.5 22.1L26.7 16.3L28.3 18.2H30.5"
+              stroke="#FACC15"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
             <path
-              d="M11 27.5C16.5 28.4 22.4 26.8 27.5 22.5"
-              stroke="#FACC15"
-              strokeWidth="2.1"
-              strokeLinecap="round"
+              d="M27.2 7.5L28.1 10.1L30.7 11L28.1 11.9L27.2 14.5L26.3 11.9L23.7 11L26.3 10.1L27.2 7.5Z"
+              fill="#FDE047"
             />
           </svg>
         )}

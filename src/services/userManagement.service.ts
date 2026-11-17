@@ -171,7 +171,7 @@ export const userManagementService = {
 
         await setDoc(adminRef, {
           uid,
-          email: email || 'admin@rjworldbd.com',
+          email: email || 'admin@dukhuvibespanel.com',
           role: 'admin',
           status: 'active',
           createdAt: existingCreatedAt ?? serverTimestamp(),

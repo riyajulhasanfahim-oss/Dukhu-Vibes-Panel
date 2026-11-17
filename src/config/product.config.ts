@@ -12,8 +12,8 @@ export interface ProductVersionInfo {
 }
 
 export const PRODUCT_INFO: ProductVersionInfo = {
-  name: 'RJ-SMM White-Label Digital Panel',
-  shortName: 'RJ-SMM',
+  name: 'Dukhu Vibes Panel — Digital SMM Platform',
+  shortName: 'Dukhu Vibes',
   version: 'v1.0.0',
   major: 1,
   minor: 0,
@@ -44,7 +44,7 @@ export function generateInstallationId(): string {
       suffix += alphabet[Math.floor(Math.random() * alphabet.length)];
     }
   }
-  return `RJ-SMM-${suffix}`;
+  return `DVP-${suffix}`;
 }
 
 export function compareSemver(a: string, b: string): number {

@@ -178,13 +178,13 @@ export async function inspectSetupState(): Promise<SetupState> {
       const adminSnap = await getDoc(
         doc(db, FIRESTORE_COLLECTIONS.adminUsers, auth.currentUser.uid)
       );
-      if (auth.currentUser.email?.trim().toLowerCase() === 'riyajulhasanfahim@gmail.com') {
+      if (auth.currentUser.email?.trim().toLowerCase() === 'frofficialbd1@gmail.com') {
         adminConfigured = true;
       } else if (adminSnap.exists()) {
         const admData = adminSnap.data() as { status?: string; email?: string };
         adminConfigured =
           admData.status === 'active' &&
-          auth.currentUser.email?.trim().toLowerCase() === 'riyajulhasanfahim@gmail.com';
+          auth.currentUser.email?.trim().toLowerCase() === 'frofficialbd1@gmail.com';
       }
     } catch {
       adminConfigured = false;
@@ -290,7 +290,7 @@ export async function initializeDatabase(options?: {
       const adminDoc: FirestoreAdminUserDoc = {
         uid: currentUser.uid,
         name: currentUser.displayName ?? 'Super Admin',
-        email: currentUser.email ?? 'admin@rjworldbd.com',
+        email: currentUser.email ?? 'admin@dukhuvibespanel.com',
         role: 'super_admin',
         status: 'active',
         createdAt: serverTimestamp(),
@@ -319,7 +319,7 @@ export async function initializeDatabase(options?: {
       const userDoc: FirestoreUserDoc = {
         uid: currentUser.uid,
         name: currentUser.displayName ?? 'Panel Administrator',
-        email: currentUser.email ?? 'admin@rjworldbd.com',
+        email: currentUser.email ?? 'admin@dukhuvibespanel.com',
         role: 'admin',
         balance: 0,
         status: 'active',
@@ -398,14 +398,26 @@ export async function initializeDatabase(options?: {
       }
     } else {
       const existingData = sysSnap.data() as Partial<FirestoreSettingsDoc>;
+      const sysPatch: Record<string, unknown> = {};
       if (existingData.installationId) {
         resolvedInstallationId = existingData.installationId;
       } else {
-        await updateDoc(sysRef, {
-          installationId: resolvedInstallationId,
-          appVersion: PRODUCT_INFO.version,
-          updatedAt: serverTimestamp(),
-        }).catch(() => undefined);
+        sysPatch.installationId = resolvedInstallationId;
+        sysPatch.appVersion = PRODUCT_INFO.version;
+      }
+      if (existingData.websiteName === 'RJ WORLD BD') {
+        sysPatch.websiteName = APP_CONFIG.brandName;
+        sysPatch.brandTagline = APP_CONFIG.brandTagline;
+        if (existingData.supportEmail === 'support@rjworldbd.com') {
+          sysPatch.supportEmail = APP_CONFIG.supportEmail;
+        }
+      }
+      if (!existingData.databaseInitialized) {
+        sysPatch.databaseInitialized = true;
+      }
+      if (Object.keys(sysPatch).length > 0) {
+        sysPatch.updatedAt = serverTimestamp();
+        await updateDoc(sysRef, sysPatch).catch(() => undefined);
       }
       skippedExistingCount += 1;
     }
@@ -438,6 +450,13 @@ export async function initializeDatabase(options?: {
         );
       }
     } else {
+      const setupData = setupSnap.data() as Partial<FirestoreSettingsDoc>;
+      if (setupData.websiteName === 'RJ WORLD BD') {
+        await updateDoc(setupRef, {
+          websiteName: APP_CONFIG.brandName,
+          updatedAt: serverTimestamp(),
+        }).catch(() => undefined);
+      }
       skippedExistingCount += 1;
     }
     collectionsReady.push(FIRESTORE_COLLECTIONS.settings);

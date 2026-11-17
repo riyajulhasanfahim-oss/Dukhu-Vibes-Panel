@@ -20,10 +20,10 @@ export default defineConfig(() => {
         ],
         manifest: {
           id: '/',
-          name: 'RJ WORLD BD — SMM Panel',
-          short_name: 'RJ WORLD BD',
+          name: 'Dukhu Vibes Panel — SMM Panel',
+          short_name: 'Dukhu Vibes',
           description:
-            'Modern, mobile-first Social Media Marketing (SMM) Panel platform for social growth, order management, and digital services.',
+            'Dukhu Vibes Panel — Modern, mobile-first Social Media Marketing (SMM) Panel platform for social growth, order management, and digital services.',
           theme_color: '#6D28D9',
           background_color: '#F6F5FB',
           display: 'standalone',

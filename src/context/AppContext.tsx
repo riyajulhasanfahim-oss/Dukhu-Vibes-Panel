@@ -363,6 +363,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const pendingRedirectRef = useRef<PendingRedirectTarget | null>(null);
   const requestedAdminRouteRef = useRef<boolean>(isAdminRouteUrl());
   const interactiveAuthInFlightRef = useRef<boolean>(false);
+  const autoInitializedAdminUidRef = useRef<string | null>(null);
 
   const adminPermissions = getAdminPermissions(staffRole);
   const openSetupWizard = useCallback(() => setSetupWizardOpen(true), []);
@@ -799,6 +800,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       void refreshSetupState();
     }
   }, [firebaseUser, refreshSetupState, userRole, viewMode]);
+
+  // Automatically bootstrap Firestore & seed missing categories/services once per admin session
+  useEffect(() => {
+    if (!authReady || !firebaseUser || userRole !== 'admin' || accountStatus !== 'active') {
+      return;
+    }
+    if (autoInitializedAdminUidRef.current === firebaseUser.uid) {
+      return;
+    }
+    autoInitializedAdminUidRef.current = firebaseUser.uid;
+
+    let active = true;
+    (async () => {
+      try {
+        const state = await inspectSetupState();
+        if (!active) return;
+        const shouldSeedCatalog = state.demoDataEnabled !== false;
+        if (!state.databaseInitialized || shouldSeedCatalog) {
+          const report = await initializeDatabase({ seedDemo: shouldSeedCatalog });
+          if (!active) return;
+          setLastInitReport(report);
+          setSetupState(report.setupState);
+          if (report.success && (report.createdDocsCount > 0 || !state.databaseInitialized)) {
+            await refreshCustomerData();
+          } else {
+            await refreshSystemSettings().catch(() => undefined);
+          }
+        } else {
+          setSetupState(state);
+        }
+      } catch {
+        // Non-blocking background initialization
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    accountStatus,
+    authReady,
+    firebaseUser,
+    refreshCustomerData,
+    refreshSystemSettings,
+    userRole,
+  ]);
 
   // Refresh wallet transactions when navigating to Funds tab
   useEffect(() => {

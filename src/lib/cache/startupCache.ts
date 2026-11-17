@@ -38,9 +38,9 @@ export interface UserStartupSnapshot {
   cachedAt: number;
 }
 
-const PUBLIC_CACHE_PREFIX = 'rj_public_cache_v1';
-const USER_CACHE_PREFIX = 'rj_user_cache_v1';
-const LAST_UID_PREFIX = 'rj_last_uid_v1';
+const PUBLIC_CACHE_PREFIX = 'dvp_public_cache_v1';
+const USER_CACHE_PREFIX = 'dvp_user_cache_v1';
+const LAST_UID_PREFIX = 'dvp_last_uid_v1';
 
 function getScopeKey(): string {
   const cfg = resolveActiveFirebaseConfig();

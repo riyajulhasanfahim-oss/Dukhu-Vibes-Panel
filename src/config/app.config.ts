@@ -14,11 +14,11 @@ export interface AppBrandConfig {
 }
 
 export const APP_CONFIG: AppBrandConfig = {
-  brandName: 'RJ WORLD BD',
+  brandName: 'Dukhu Vibes Panel',
   brandTagline: 'SMM Panel',
   currencySymbol: '৳',
   currencyCode: 'BDT',
-  supportEmail: 'support@rjworldbd.com',
+  supportEmail: 'support@dukhuvibespanel.com',
   supportHours: '24/7 Live Assistance',
   dataSourceMode: 'remote',
 };

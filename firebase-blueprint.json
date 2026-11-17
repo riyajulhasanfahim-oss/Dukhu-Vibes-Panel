@@ -477,7 +477,7 @@
     },
     "WebsiteInstallation": {
       "title": "WebsiteInstallation",
-      "description": "Registry of connected reseller websites and panels using the RJ WORLD BD Reseller API.",
+      "description": "Registry of connected reseller websites and panels using the Dukhu Vibes Panel Reseller API.",
       "type": "object",
       "properties": {
         "id": { "type": "string", "minLength": 1, "maxLength": 64 },
@@ -535,11 +535,11 @@
     },
     "/apiCustomers/{customerId}": {
       "schema": { "$ref": "#/entities/ApiCustomer" },
-      "description": "RJ WORLD BD API Gateway customer accounts and API balances."
+      "description": "Dukhu Vibes Panel API Gateway customer accounts and API balances."
     },
     "/apiKeys/{keyId}": {
       "schema": { "$ref": "#/entities/ApiKey" },
-      "description": "Hashed API key credentials for RJ WORLD BD Public API."
+      "description": "Hashed API key credentials for Dukhu Vibes Panel Public API."
     },
     "/apiOrders/{apiOrderId}": {
       "schema": { "$ref": "#/entities/ApiOrder" },
@@ -555,7 +555,7 @@
     },
     "/websiteInstallations/{installationId}": {
       "schema": { "$ref": "#/entities/WebsiteInstallation" },
-      "description": "Sold buyer website installations locked to RJ WORLD BD API."
+      "description": "Sold buyer website installations locked to Dukhu Vibes Panel API."
     },
     "/settings/{settingId}": {
       "schema": { "$ref": "#/entities/SystemSettings" },

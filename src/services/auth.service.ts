@@ -291,7 +291,7 @@ export const authService = {
     }
 
     const isDesignatedAdmin =
-      authUser.email?.trim().toLowerCase() === 'riyajulhasanfahim@gmail.com';
+      authUser.email?.trim().toLowerCase() === 'frofficialbd1@gmail.com';
 
     if (snap.exists()) {
       const profile = mapFirestoreUser(snap.data() as FirestoreUserDoc);

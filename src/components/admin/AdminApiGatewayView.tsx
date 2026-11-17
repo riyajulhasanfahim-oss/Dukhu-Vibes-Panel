@@ -587,7 +587,7 @@ export function AdminApiGatewayView() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-display text-xl sm:text-2xl font-extrabold text-slate-950">
-            RJ WORLD BD API Gateway Control
+            Dukhu Vibes Panel API Gateway Control
           </h1>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
             <span className="font-mono text-slate-700">POST /api/v2</span>
@@ -1393,7 +1393,7 @@ export function AdminApiGatewayView() {
                             </td>
                             <td className="px-4 py-3 font-semibold">
                               {inst.apiLocked ? (
-                                <span className="text-emerald-700">Locked to RJ WORLD BD</span>
+                                <span className="text-emerald-700">Locked to Dukhu Vibes Panel</span>
                               ) : (
                                 <span className="text-slate-600">Unlocked</span>
                               )}
@@ -1545,7 +1545,7 @@ export function AdminApiGatewayView() {
                     onChange={(e) =>
                       setGwSettings((p) => ({ ...p, defaultBaseUrl: e.target.value }))
                     }
-                    placeholder="https://api.rjworldbd.com/api/v2"
+                    placeholder="https://api.dukhuvibespanel.com/api/v2"
                     className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 font-mono text-xs"
                   />
                 </div>
@@ -2031,7 +2031,7 @@ export function AdminApiGatewayView() {
                   onChange={(e) => setInstLocked(e.target.checked)}
                   className="h-4 w-4 rounded border-slate-300 text-violet-700"
                 />
-                <span>Lock upstream provider configuration strictly to RJ WORLD BD API</span>
+                <span>Lock upstream provider configuration strictly to Dukhu Vibes Panel API</span>
               </label>
 
               <div className="flex justify-end gap-2 pt-2">

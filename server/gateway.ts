@@ -854,7 +854,7 @@ export function registerGatewayRoutes(app: Express, deps: GatewayDeps): void {
 
   /**
    * Standard SMM Panel Public API v2 Gateway Endpoint:
-   * External Website -> RJ WORLD BD API Gateway -> Internal Order Engine -> Upstream Provider
+   * External Website -> Dukhu Vibes Panel API Gateway -> Internal Order Engine -> Upstream Provider
    * Supports: balance, services, add, status (single & comma-separated multi-order).
    */
   const handlePublicApiV2 = async (req: Request, res: Response) => {
